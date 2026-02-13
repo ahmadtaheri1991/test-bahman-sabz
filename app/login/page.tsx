@@ -28,7 +28,7 @@ export default function Login() {
         return;
       }
 
-      router.push("/");
+      router.push("/dashboard");
     } catch (err) {
       console.log(err);
     } finally {
@@ -53,7 +53,7 @@ export default function Login() {
           <form onSubmit={login}>
             <div className="flex flex-col gap-4">
               <div className="text-red-600 text-center">{errorMessage}</div>
-              
+
               <input
                 placeholder="Enter your username"
                 className={[
