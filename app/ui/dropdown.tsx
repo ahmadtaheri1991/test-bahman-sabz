@@ -10,11 +10,12 @@ import {
 } from "@headlessui/react";
 import { CheckIcon, ChevronDownIcon } from "@heroicons/react/20/solid";
 import clsx from "clsx";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 interface Item {
   id: number;
   name: string;
+  group?: string;
 }
 
 type SingleProps = {
@@ -22,6 +23,7 @@ type SingleProps = {
   selected: Item | null;
   onSelectionChange: (item: Item) => void;
   multiple?: false;
+  groupBy?: (item: Item) => string;
 };
 
 type MultipleProps = {
@@ -29,12 +31,13 @@ type MultipleProps = {
   selected: Item[];
   onSelectionChange: (items: Item[]) => void;
   multiple: true;
+  groupBy?: (item: Item) => string;
 };
 
 type Props = SingleProps | MultipleProps;
 
 export default function DropdownSelect(props: Props) {
-  const { items, selected, onSelectionChange, multiple } = props;
+  const { items, selected, onSelectionChange, multiple, groupBy } = props;
 
   const [search, setSearch] = useState("");
   const [filteredItems, setFilteredItems] = useState<Item[]>([]);
@@ -49,6 +52,17 @@ export default function DropdownSelect(props: Props) {
       items.filter((item) => item.name.toLowerCase().includes(search)),
     );
   }, [search, items]);
+
+  const groupedItems = useMemo(() => {
+    if (!groupBy) return null;
+
+    return filteredItems.reduce<Record<string, Item[]>>((acc, item) => {
+      const key = groupBy(item) || "Other";
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(item);
+      return acc;
+    }, {});
+  }, [filteredItems, groupBy]);
 
   return (
     <div className="mx-auto h-screen w-52 pt-20">
@@ -92,17 +106,36 @@ export default function DropdownSelect(props: Props) {
               placeholder="search"
             />
 
-            {filteredItems.map((item) => (
-              <ListboxOption
-                key={item.name}
-                value={item}
-                className="group flex cursor-default items-center gap-2 rounded-lg px-3 py-1.5 select-none data-focus:bg-white/10"
-              >
-                <CheckIcon className="invisible size-4 fill-white group-data-selected:visible" />
+            {!groupedItems &&
+              filteredItems.map((item) => (
+                <ListboxOption
+                  key={item.name}
+                  value={item}
+                  className="group flex cursor-default items-center gap-2 rounded-lg px-3 py-1.5 select-none data-focus:bg-white/10"
+                >
+                  <CheckIcon className="invisible size-4 fill-white group-data-selected:visible" />
 
-                <div className="text-sm/6 text-white">{item.name}</div>
-              </ListboxOption>
-            ))}
+                  <div className="text-sm/6 text-white">{item.name}</div>
+                </ListboxOption>
+              ))}
+
+            {groupedItems &&
+              Object.entries(groupedItems).map(([group, groupItems]) => (
+                <div key={group}>
+                  <div className="px-3 py-1 text-xs text-white/40">{group}</div>
+
+                  {groupItems.map((item) => (
+                    <ListboxOption
+                      key={item.id}
+                      value={item}
+                      className="group flex cursor-default items-center gap-2 rounded-lg px-3 py-1.5 pl-6 select-none data-focus:bg-white/10"
+                    >
+                      <CheckIcon className="invisible size-4 fill-white group-data-selected:visible" />
+                      <div className="text-sm/6 text-white">{item.name}</div>
+                    </ListboxOption>
+                  ))}
+                </div>
+              ))}
           </ListboxOptions>
         </Transition>
       </Listbox>
