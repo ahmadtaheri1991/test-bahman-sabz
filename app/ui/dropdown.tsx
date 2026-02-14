@@ -2,6 +2,7 @@
 
 import {
   Input,
+  Checkbox,
   Listbox,
   ListboxButton,
   ListboxOption,
@@ -41,6 +42,7 @@ export default function DropdownSelect(props: Props) {
 
   const [search, setSearch] = useState("");
   const [filteredItems, setFilteredItems] = useState<Item[]>([]);
+  const [isAllChecked, setIsAllChecked] = useState(false);
 
   useEffect(() => {
     if (!search) {
@@ -63,6 +65,19 @@ export default function DropdownSelect(props: Props) {
       return acc;
     }, {});
   }, [filteredItems, groupBy]);
+
+  function handleIsAllCheckedChange(val: boolean) {
+    setIsAllChecked(val);
+
+    if (!multiple) return;
+    onSelectionChange(val ? items : []);
+  }
+
+  useEffect(() => {
+    if (!multiple) return;
+
+    setIsAllChecked(items.length == selected.length);
+  }, [selected, multiple, items, setIsAllChecked]);
 
   return (
     <div className="mx-auto h-screen w-52 pt-20">
@@ -105,6 +120,16 @@ export default function DropdownSelect(props: Props) {
               }}
               placeholder="search"
             />
+
+            {multiple && (
+              <Checkbox
+                checked={isAllChecked}
+                onChange={handleIsAllCheckedChange}
+                className="inline-block group size-6 rounded-md bg-white/10 p-1 ring-1 ring-white/15 ring-inset focus:not-data-focus:outline-none data-checked:bg-white data-focus:outline data-focus:outline-offset-2 data-focus:outline-white"
+              >
+                <CheckIcon className="hidden size-4 fill-black group-data-checked:block" />
+              </Checkbox>
+            )}
 
             {!groupedItems &&
               filteredItems.map((item) => (
