@@ -17,14 +17,24 @@ interface Item {
   name: string;
 }
 
-interface Props {
+type SingleProps = {
   items: Item[];
-  selected: null | Item;
+  selected: Item | null;
   onSelectionChange: (item: Item) => void;
-}
+  multiple?: false;
+};
+
+type MultipleProps = {
+  items: Item[];
+  selected: Item[];
+  onSelectionChange: (items: Item[]) => void;
+  multiple: true;
+};
+
+type Props = SingleProps | MultipleProps;
 
 export default function DropdownSelect(props: Props) {
-  const { items, selected, onSelectionChange } = props;
+  const { items, selected, onSelectionChange, multiple } = props;
 
   const [search, setSearch] = useState("");
   const [filteredItems, setFilteredItems] = useState<Item[]>([]);
@@ -43,11 +53,14 @@ export default function DropdownSelect(props: Props) {
   return (
     <div className="mx-auto h-screen w-52 pt-20">
       <Listbox
-        value={selected || { id: -1, name: "Select item" }}
-        onChange={onSelectionChange}
+        value={selected as any}
+        onChange={onSelectionChange as any}
+        multiple={multiple}
       >
         <ListboxButton className="relative block w-full min-h-9 rounded-lg bg-black/90 py-1.5 pr-8 pl-3 text-left text-sm/6 text-white">
-          {selected?.name}
+          {multiple
+            ? (selected as Item[]).map((x) => x.name).join(", ")
+            : (selected as Item | null)?.name || "Select item"}
 
           <ChevronDownIcon
             className="group pointer-events-none absolute top-2.5 right-2.5 size-4 fill-white/60"
