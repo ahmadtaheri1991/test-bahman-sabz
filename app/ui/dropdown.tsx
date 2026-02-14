@@ -1,13 +1,16 @@
 "use client";
 
 import {
+  Input,
   Listbox,
   ListboxButton,
   ListboxOption,
   ListboxOptions,
+  Transition,
 } from "@headlessui/react";
 import { CheckIcon, ChevronDownIcon } from "@heroicons/react/20/solid";
 import clsx from "clsx";
+import { useState, useEffect } from "react";
 
 interface Item {
   id: number;
@@ -23,18 +26,27 @@ interface Props {
 export default function DropdownSelect(props: Props) {
   const { items, selected, onSelectionChange } = props;
 
+  const [search, setSearch] = useState("");
+  const [filteredItems, setFilteredItems] = useState<Item[]>([]);
+
+  useEffect(() => {
+    if (!search) {
+      setFilteredItems(items);
+      return;
+    }
+
+    setFilteredItems(
+      items.filter((item) => item.name.toLowerCase().includes(search)),
+    );
+  }, [search, items]);
+
   return (
     <div className="mx-auto h-screen w-52 pt-20">
       <Listbox
         value={selected || { id: -1, name: "Select item" }}
         onChange={onSelectionChange}
       >
-        <ListboxButton
-          className={clsx(
-            "relative block w-full min-h-9 rounded-lg bg-black/90 py-1.5 pr-8 pl-3 text-left text-sm/6 text-white",
-            "focus:not-data-focus:outline-none data-focus:outline-2 data-focus:-outline-offset-2 data-focus:outline-black/75",
-          )}
-        >
+        <ListboxButton className="relative block w-full min-h-9 rounded-lg bg-black/90 py-1.5 pr-8 pl-3 text-left text-sm/6 text-white">
           {selected?.name}
 
           <ChevronDownIcon
@@ -43,26 +55,43 @@ export default function DropdownSelect(props: Props) {
           />
         </ListboxButton>
 
-        <ListboxOptions
-          anchor="bottom"
-          transition
-          className={clsx(
-            "w-(--button-width) rounded-xl border border-black/90 bg-black/90 p-1 [--anchor-gap:--spacing(1)] focus:outline-none",
-            "transition duration-100 ease-in data-leave:data-closed:opacity-0",
-          )}
+        <Transition
+          leave="transition duration-100 ease-in"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+          afterLeave={() => setSearch("")}
         >
-          {items.map((item) => (
-            <ListboxOption
-              key={item.name}
-              value={item}
-              className="group flex cursor-default items-center gap-2 rounded-lg px-3 py-1.5 select-none data-focus:bg-white/10"
-            >
-              <CheckIcon className="invisible size-4 fill-white group-data-selected:visible" />
+          <ListboxOptions
+            anchor="bottom"
+            transition
+            className="w-(--button-width) rounded-xl border border-black/90 bg-black/90 p-1 [--anchor-gap:--spacing(1)] focus:outline-none"
+          >
+            <Input
+              className={clsx(
+                "mb-1 block w-full rounded-lg border-none bg-white/5 px-3 py-1.5 text-sm/6 text-white",
+                "focus:not-data-focus:outline-none data-focus:outline-2 data-focus:-outline-offset-2 data-focus:outline-white/25",
+              )}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key == " ") e.stopPropagation();
+              }}
+              placeholder="search"
+            />
 
-              <div className="text-sm/6 text-white">{item.name}</div>
-            </ListboxOption>
-          ))}
-        </ListboxOptions>
+            {filteredItems.map((item) => (
+              <ListboxOption
+                key={item.name}
+                value={item}
+                className="group flex cursor-default items-center gap-2 rounded-lg px-3 py-1.5 select-none data-focus:bg-white/10"
+              >
+                <CheckIcon className="invisible size-4 fill-white group-data-selected:visible" />
+
+                <div className="text-sm/6 text-white">{item.name}</div>
+              </ListboxOption>
+            ))}
+          </ListboxOptions>
+        </Transition>
       </Listbox>
     </div>
   );
